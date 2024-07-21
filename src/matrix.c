@@ -34,18 +34,19 @@ Matrix matSum(Matrix a, Matrix b);
 Matrix matSub(Matrix a, Matrix b);
 Matrix matMul(Matrix a, Matrix b);
 Matrix matByNum(Matrix a, double k);
+Matrix matTransponse(Matrix a);
+bool matEqual(Matrix a, Matrix b);
 int printMatrix(Matrix a);
 int matRemove(Matrix a);
 
 int main() {
-    Matrix a = matCreate(2, 2);
+    Matrix a = matCreate(2, 3);
 
     for (int i = 0, cnt = 1; i < a.rows; i++) {
         for (int j = 0; j < a.cols; j++, cnt++) {
             a.mat[i][j] = cnt;
         }
     }
-
 
     printMatrix(a);
     printf("\n");
@@ -57,6 +58,12 @@ int main() {
     printf("\n");
     printMatrix(matByNum(a, 2.4));
     printf("\n");
+    printf("%d\n", matEqual(a, a));
+    printf("\n");
+    printf("%d\n", matEqual(a, matSub(a, a)));
+    printf("\n");
+    printMatrix(matTransponse(a));
+    printf("\n");
     matRemove(a);
 
     return 0;
@@ -67,6 +74,19 @@ Vector vecCreate(int dims) {
     a.dim = dims;
     (a.vec) = (double *)malloc(dims * sizeof(double));
     return a;
+}
+
+Matrix matTransponse(Matrix a) {
+    Matrix c = {0, 0, NULL};
+    if (a.mat != NULL) {
+        c = matCreate(a.cols, a.rows);
+        for (int i = 0; i < c.rows; i++) {
+            for (int j = 0; j < c.cols; j++) {
+                c.mat[i][j] = a.mat[j][i];
+            }
+        }
+    }
+    return c;
 }
 
 Vector vecSum(Vector a, Vector b) {
@@ -89,6 +109,16 @@ Matrix matCreate(int rows, int cols) {
     (a.mat) = (double **)malloc(rows * sizeof(double *));
     for (int i = 0; i < rows; i++) (a.mat[i]) = (double *)malloc(cols * sizeof(double *));
     return a;
+}
+
+bool matEqual(Matrix a, Matrix b) {
+    bool res = true;
+    if ((a.cols == b.cols && a.rows == b.rows))
+        for (int i = 0; i < a.rows && res; i++)
+            for (int j = 0; j < a.cols && res; j++) res = (a.mat)[i][j] == (b.mat)[i][j];
+    else
+        res = false;
+    return res;
 }
 
 Matrix matSum(Matrix a, Matrix b) {
@@ -114,7 +144,7 @@ Matrix matSub(Matrix a, Matrix b) {
 }
 
 Matrix matMul(Matrix a, Matrix b) {
-    Matrix c = {a.rows, b.cols, NULL};
+    Matrix c = {0, 0, NULL};
     if (a.cols == b.rows && a.mat != NULL && b.mat != NULL) {
         c = matCreate(a.rows, b.cols);
         for (int i = 0; i < a.rows; i++) {
