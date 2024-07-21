@@ -1,82 +1,6 @@
-// #include "matrix.h"
-#include <stdarg.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include "matrix.h"
 
-typedef struct Vector {
-    int dim;
-    double *vec;
-} Vector;
-
-typedef struct Matrix {
-    int rows;
-    int cols;
-    double **mat;
-} Matrix;
-
-// typedef struct Tensor {
-//     int n;
-//     void *ptr;
-// }
-
-// typedef struct matSpace{
-//     int cnt;
-//     Matrix *space;
-// } MatrixSpace;
-
-Vector vecCreate(int dims);
-Vector vecSum(Vector a, Vector b);
-double scalMul(Vector a, Vector b);
-
-Matrix matCreate(int rows, int cols);
-Matrix matSum(Matrix a, Matrix b);
-Matrix matSub(Matrix a, Matrix b);
-Matrix matMul(Matrix a, Matrix b);
-Matrix matByNum(Matrix a, double k);
-Matrix matTransponse(Matrix a);
-bool matEqual(Matrix a, Matrix b);
-int printMatrix(Matrix a);
-int matRemove(Matrix a);
-
-int main() {
-    Matrix a = matCreate(2, 3);
-
-    for (int i = 0, cnt = 1; i < a.rows; i++) {
-        for (int j = 0; j < a.cols; j++, cnt++) {
-            a.mat[i][j] = cnt;
-        }
-    }
-
-    printMatrix(a);
-    printf("\n");
-    printMatrix(matSum(a, a));
-    printf("\n");
-    printMatrix(matSub(a, a));
-    printf("\n");
-    printMatrix(matMul(a, a));
-    printf("\n");
-    printMatrix(matByNum(a, 2.4));
-    printf("\n");
-    printf("%d\n", matEqual(a, a));
-    printf("\n");
-    printf("%d\n", matEqual(a, matSub(a, a)));
-    printf("\n");
-    printMatrix(matTransponse(a));
-    printf("\n");
-    matRemove(a);
-
-    return 0;
-}
-
-Vector vecCreate(int dims) {
-    Vector a;
-    a.dim = dims;
-    (a.vec) = (double *)malloc(dims * sizeof(double));
-    return a;
-}
-
-Matrix matTransponse(Matrix a) {
+Matrix matTran(Matrix a) {
     Matrix c = {0, 0, NULL};
     if (a.mat != NULL) {
         c = matCreate(a.cols, a.rows);
@@ -87,19 +11,6 @@ Matrix matTransponse(Matrix a) {
         }
     }
     return c;
-}
-
-Vector vecSum(Vector a, Vector b) {
-    Vector c = {a.dim, NULL};
-    if (a.dim == b.dim)
-        for (int i = 0; i < a.dim; i++) (c.vec)[i] = (a.vec)[i] + (b.vec)[i];
-    return c;
-}
-
-double scalMul(Vector a, Vector b) {
-    double s = 0;
-    for (int i = 0; i < a.dim; i++) s += (a.vec)[i] * (b.vec)[i];
-    return s;
 }
 
 Matrix matCreate(int rows, int cols) {
@@ -172,6 +83,67 @@ Matrix matByNum(Matrix a, double k) {
     return c;
 }
 
+Matrix matMinor(Matrix a, int x, int y) {
+    Matrix b = matCreate(a.rows - 1, a.cols - 1);
+    for (int i = 0, bi = 0; i < a.rows; i++) {
+        if (i == x) continue;
+        for (int j = 0, bj = 0; j < a.cols; j++) {
+            if (j == y) continue;
+            b.mat[bi][bj] = a.mat[i][j];
+            bj++;
+        }
+        bi++;
+    }
+    return b;
+}
+
+double matDet(Matrix a) {
+    if (a.cols != a.rows) return NAN;  // Возвращаем NaN для несовместимых размеров
+    if (a.cols == 1) return a.mat[0][0];
+    if (a.cols == 2) return a.mat[0][0] * a.mat[1][1] - a.mat[0][1] * a.mat[1][0];
+
+    double d = 0;
+    int sign = 1;
+    for (int i = 0; i < a.cols; i++) {
+        Matrix minor = matMinor(a, 0, i);
+        d += sign * a.mat[0][i] * matDet(minor);
+        sign = -sign;
+        matRemove(minor);
+    }
+    return d;
+}
+
+Matrix matCompl(Matrix a) {
+    Matrix b = matCreate(0, 0);
+    if (a.cols != a.rows)
+        b.mat = NULL;
+    else {
+        b = matCreate(a.cols, a.rows);
+        for (int i = 0; i < a.cols; i++) {
+            for (int j = 0; j < a.rows; j++) {
+                Matrix minor = matMinor(a, i, j);
+                b.mat[i][j] = pow(-1, i + j) * matDet(minor);
+                matRemove(minor);
+            }
+        }
+    }
+    return b;
+}
+
+Matrix matInv(Matrix a){
+    return matByNum(matTran(matCompl(a)), (1/matDet(a)));
+}
+
+double matTrace(Matrix a){
+    double s = 0;
+    if (a.cols == a.rows)
+        for (int i = 0; i < a.cols; i++) 
+            s += (a.mat)[i][i];
+    else
+        s = NAN;
+    return s;
+}
+
 int printMatrix(Matrix a) {
     int res = true;
     if (a.mat != NULL) {
@@ -190,6 +162,7 @@ int printMatrix(Matrix a) {
 
 int matRemove(Matrix a) {
     int res = true;
+    if (a.mat == NULL) res = false;
     for (int i = 0; i < a.rows; i++) free(a.mat[i]);
     free(a.mat);
     return res;
