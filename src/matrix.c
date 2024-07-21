@@ -1,4 +1,5 @@
 // #include "matrix.h"
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,18 +26,19 @@ typedef struct Matrix {
 // } MatrixSpace;
 
 Vector vecCreate(int dims);
-Vector vecSum (Vector a, Vector b);
-double scalMul (Vector a, Vector b);
+Vector vecSum(Vector a, Vector b);
+double scalMul(Vector a, Vector b);
 
 Matrix matCreate(int rows, int cols);
 Matrix matSum(Matrix a, Matrix b);
 Matrix matSub(Matrix a, Matrix b);
 Matrix matMul(Matrix a, Matrix b);
+Matrix matByNum(Matrix a, double k);
 int printMatrix(Matrix a);
 int matRemove(Matrix a);
 
 int main() {
-    Matrix a = matCreate(3, 3);
+    Matrix a = matCreate(2, 2);
 
     for (int i = 0, cnt = 1; i < a.rows; i++) {
         for (int j = 0; j < a.cols; j++, cnt++) {
@@ -51,28 +53,32 @@ int main() {
     printf("\n");
     printMatrix(matSub(a, a));
     printf("\n");
+    printMatrix(matMul(a, a));
+    printf("\n");
+    printMatrix(matByNum(a, 2.4));
+    printf("\n");
     matRemove(a);
 
     return 0;
 }
 
-Vector vecCreate(int dims){
+Vector vecCreate(int dims) {
     Vector a;
     a.dim = dims;
     (a.vec) = (double *)malloc(dims * sizeof(double));
     return a;
 }
 
-Vector vecSum (Vector a, Vector b){
+Vector vecSum(Vector a, Vector b) {
     Vector c = {a.dim, NULL};
     if (a.dim == b.dim)
-    for (int i = 0; i < a.dim; i++) (c.vec)[i] =  (a.vec)[i] + (b.vec)[i];
+        for (int i = 0; i < a.dim; i++) (c.vec)[i] = (a.vec)[i] + (b.vec)[i];
     return c;
 }
 
-double scalMul (Vector a, Vector b){
+double scalMul(Vector a, Vector b) {
     double s = 0;
-    for (int i = 0; i < a.dim; i++) s +=  (a.vec)[i] * (b.vec)[i];
+    for (int i = 0; i < a.dim; i++) s += (a.vec)[i] * (b.vec)[i];
     return s;
 }
 
@@ -109,14 +115,27 @@ Matrix matSub(Matrix a, Matrix b) {
 
 Matrix matMul(Matrix a, Matrix b) {
     Matrix c = {a.rows, b.cols, NULL};
-    if (a.cols == b.rows) {
+    if (a.cols == b.rows && a.mat != NULL && b.mat != NULL) {
+        c = matCreate(a.rows, b.cols);
         for (int i = 0; i < a.rows; i++) {
             for (int j = 0; j < b.cols; j++) {
-                    Vector u = vecCreate(a.rows);
-                    u.vec = (a.mat)[i];
-                    Vector v = vecCreate(b.cols);
-                    v.vec = (b.mat)[j];                 // Нужно сделать обращение к столбцам 
-                    (c.mat)[i][j] = scalMul(u, v);
+                c.mat[i][j] = 0;
+                for (int k = 0; k < a.cols; k++) {
+                    c.mat[i][j] += a.mat[i][k] * b.mat[k][j];
+                }
+            }
+        }
+    }
+    return c;
+}
+
+Matrix matByNum(Matrix a, double k) {
+    Matrix c = {a.rows, a.cols, NULL};
+    if (a.mat != NULL) {
+        c = matCreate(a.rows, a.cols);
+        for (int i = 0; i < a.rows; i++) {
+            for (int j = 0; j < a.cols; j++) {
+                c.mat[i][j] = a.mat[i][j] * k;
             }
         }
     }
@@ -125,11 +144,16 @@ Matrix matMul(Matrix a, Matrix b) {
 
 int printMatrix(Matrix a) {
     int res = true;
-    for (int i = 0; i < a.rows; i++) {
-        for (int j = 0; j < a.cols; j++) {
-            printf("%.lf ", a.mat[i][j]);
+    if (a.mat != NULL) {
+        for (int i = 0; i < a.rows; i++) {
+            for (int j = 0; j < a.cols; j++) {
+                printf("%.1lf ", a.mat[i][j]);
+            }
+            printf("\n");
         }
-        printf("\n");
+    } else {
+        printf("Error: incorrect input\n");
+        res = false;
     }
     return res;
 }
