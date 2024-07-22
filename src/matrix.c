@@ -13,6 +13,20 @@ Matrix matTran(Matrix a) {
     return c;
 }
 
+Matrix arrayToMatrix(double *arr, int arr_i, int arr_j){
+    Matrix a = {0, 0, NULL};
+    int arr_len = sizeof(arr);
+    if (arr_len % arr_i == 0 && arr_len % arr_j == 0){
+        a = matCreate(arr_i, arr_j);
+        for (int i = 0, cnt = 0; i < arr_i; i++){
+            for (int j = 0; j < arr_j; j++, cnt++){
+                a.mat[i][j] = arr[cnt];
+            }
+        }
+    }
+    return a;
+}
+
 Matrix matCreate(int rows, int cols) {
     Matrix a;
     a.cols = cols;
